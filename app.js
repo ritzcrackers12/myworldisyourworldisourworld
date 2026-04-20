@@ -50,15 +50,70 @@ function showSection(sectionName) {
     });
 }
 
-// Mock Login
-loginBtn.addEventListener('click', () => {
-    const name = document.getElementById('login-name').value;
-    if (name) {
-        state.user = { name };
-        nav.style.display = 'flex';
-        showSection('create');
-        addChatMessage('System', `Identity verified: ${name}. Portals active.`);
+// Authentication logic
+const loginError = document.getElementById('login-error');
+
+function showLoginError(msg) {
+    loginError.textContent = msg;
+    loginError.style.opacity = '1';
+    setTimeout(() => loginError.style.opacity = '0', 3000);
+}
+
+// Register Logic
+document.getElementById('register-btn').addEventListener('click', async () => {
+    const user = document.getElementById('login-username').value.trim();
+    const pass = document.getElementById('login-password').value;
+
+    if (!user || !pass) return showLoginError("Username and password required.");
+    if (user.length < 3) return showLoginError("Username too short.");
+    if (!firebase || !db) return showLoginError("Connection to void lost.");
+
+    const userRef = firebase.database().ref(`users/${user}`);
+    const snapshot = await userRef.once('value');
+
+    if (snapshot.exists()) {
+        return showLoginError("That identity is already taken.");
     }
+
+    await userRef.set({ password: pass, created: Date.now() });
+    
+    state.user = { name: user };
+    nav.style.display = 'flex';
+    showSection('create');
+    addChatMessage('System', `Identity created for ${user}. Portals open.`);
+});
+
+// Login Logic
+loginBtn.addEventListener('click', async () => {
+    const user = document.getElementById('login-username').value.trim();
+    const pass = document.getElementById('login-password').value;
+
+    if (!user || !pass) return showLoginError("Enter your credentials.");
+    if (!firebase || !db) return showLoginError("Connection to void lost.");
+
+    const userRef = firebase.database().ref(`users/${user}`);
+    const snapshot = await userRef.once('value');
+
+    if (!snapshot.exists()) {
+        return showLoginError("Identity not found. Begin a new journey?");
+    }
+
+    const userData = snapshot.val();
+    if (userData.password !== pass) {
+        return showLoginError("Forbidden. Credentials do not match.");
+    }
+
+    state.user = { name: user };
+    nav.style.display = 'flex';
+    showSection('create');
+    addChatMessage('System', `Welcome back, ${user}. Re-establishing portal connection.`);
+    
+    // Find last world by this user
+    firebase.database().ref('worlds').orderByChild('user').equalTo(user).limitToLast(1).once('value', (snap) => {
+        if (snap.exists()) {
+            state.lastWorldId = Object.keys(snap.val())[0];
+        }
+    });
 });
 
 // Navigation Links
