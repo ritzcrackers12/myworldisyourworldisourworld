@@ -331,7 +331,7 @@ async function showUserWorlds() {
         
         worldIds.forEach(id => {
             const data = worlds[id];
-            const card = createGalleryCard(id, data, false); // NO comments for personal cards
+            const card = createGalleryCard(id, data, 'read-only'); // Read-only comments for personal cards
             grid.appendChild(card);
         });
     } catch (err) {
@@ -340,7 +340,7 @@ async function showUserWorlds() {
     }
 }
 
-function createGalleryCard(worldId, data, includeComments = true) {
+function createGalleryCard(worldId, data, commentMode = 'social') {
     const card = document.createElement('div');
     card.className = 'glass-panel animate-in';
     card.style.display = 'flex';
@@ -358,16 +358,21 @@ function createGalleryCard(worldId, data, includeComments = true) {
         </div>
     `;
 
-    if (includeComments) {
+    if (commentMode !== 'none') {
         innerHTML += `
-            <div id="explore-comments-${worldId}" class="comment-section" style="max-height: 150px; background: rgba(0,0,0,0.2);">
+            <div id="explore-comments-${worldId}" class="comment-section" style="max-height: 150px; background: rgba(0,0,0,0.2); ${commentMode === 'read-only' ? 'border-radius: 0 0 24px 24px;' : ''}">
                 <!-- Comments will load here -->
             </div>
-            <div class="comment-controls">
-                <input type="text" id="explore-input-${worldId}" class="comment-input" placeholder="Add a thought...">
-                <button class="send-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="event.stopPropagation(); postExploreComment('${worldId}')">Post</button>
-            </div>
         `;
+        
+        if (commentMode === 'social') {
+            innerHTML += `
+                <div class="comment-controls">
+                    <input type="text" id="explore-input-${worldId}" class="comment-input" placeholder="Add a thought...">
+                    <button class="send-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="event.stopPropagation(); postExploreComment('${worldId}')">Post</button>
+                </div>
+            `;
+        }
     }
 
     card.innerHTML = innerHTML;
@@ -376,7 +381,7 @@ function createGalleryCard(worldId, data, includeComments = true) {
         showWorldDetail(worldId);
     });
 
-    if (includeComments) {
+    if (commentMode !== 'none') {
         // Load existing comments for this card
         const commentsRef = firebase.database().ref(`worlds/${worldId}/comments`);
         const commentBox = card.querySelector(`#explore-comments-${worldId}`);
