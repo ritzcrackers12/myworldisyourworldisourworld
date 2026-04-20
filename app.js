@@ -19,6 +19,7 @@ const sections = {
     login: document.getElementById('login-section'),
     create: document.getElementById('create-section'),
     explore: document.getElementById('explore-section'),
+    userWorlds: document.getElementById('user-worlds-section'),
     detail: document.getElementById('detail-section')
 };
 
@@ -31,7 +32,8 @@ const chatMessages = document.getElementById('chat-messages');
 // Navigation Logic
 function showSection(sectionName) {
     Object.keys(sections).forEach(key => {
-        sections[key].style.display = key === sectionName ? (key === 'explore' || key === 'detail' ? 'block' : 'flex') : 'none';
+        sections[key].style.display = key === sectionName ? 
+            (['explore', 'detail', 'userWorlds'].includes(key) ? 'block' : 'flex') : 'none';
     });
     
     state.currentSection = sectionName;
@@ -139,12 +141,10 @@ document.getElementById('nav-create').addEventListener('click', (e) => {
 
 document.getElementById('nav-your-world').addEventListener('click', (e) => {
     e.preventDefault();
-    // Re-route 'Your World' to the most recent generation if it exists
-    if (state.lastWorldId) {
-        showWorldDetail(state.lastWorldId);
+    if (state.user) {
+        showUserWorlds();
     } else {
-        alert("You haven't manifested a world yet!");
-        showSection('create');
+        showSection('login');
     }
 });
 
@@ -304,13 +304,91 @@ document.getElementById('back-to-explore').addEventListener('click', () => {
 });
 
 // 2. Real-time Subscription for "Explore"
+async function showUserWorlds() {
+    if (!firebase || !db || !state.user) return;
+    
+    showSection('userWorlds');
+    const grid = document.getElementById('user-gallery-grid');
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px;">Retrieving your manifestations...</div>';
+
+    try {
+        const snap = await firebase.database().ref('worlds')
+            .orderByChild('user').equalTo(state.user.name).once('value');
+        
+        grid.innerHTML = '';
+        const worlds = snap.val();
+
+        if (!worlds) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px;">You haven\'t summoned any worlds yet traveler.</div>';
+            return;
+        }
+
+        // Convert to array and sort by newest
+        const worldIds = Object.keys(worlds).reverse();
+        
+        worldIds.forEach(id => {
+            const data = worlds[id];
+            const card = createGalleryCard(id, data);
+            grid.appendChild(card);
+        });
+    } catch (err) {
+        console.error("Failed to load user worlds:", err);
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px;">The void is currently unreachable.</div>';
+    }
+}
+
+function createGalleryCard(worldId, data) {
+    const card = document.createElement('div');
+    card.className = 'glass-panel animate-in';
+    card.style.display = 'flex';
+    card.style.flexDirection = 'column';
+    card.style.overflow = 'hidden';
+    card.style.borderRadius = '24px';
+    card.style.cursor = 'pointer';
+    
+    card.innerHTML = `
+        <div class="world-card" style="background-image: url('${data.url}'); height: 300px; border-radius: 0;">
+            <div class="card-overlay">
+                <h3 style="margin-bottom: 0px;">${data.prompt.substring(0, 40)}${data.prompt.length > 40 ? '...' : ''}</h3>
+                <p style="font-size: 0.8rem; opacity: 0.7;">by ${data.user}</p>
+            </div>
+        </div>
+        <div id="explore-comments-${worldId}" class="comment-section" style="max-height: 150px; background: rgba(0,0,0,0.2);">
+            <!-- Comments will load here -->
+        </div>
+        <div class="comment-controls">
+            <input type="text" id="explore-input-${worldId}" class="comment-input" placeholder="Add a thought...">
+            <button class="send-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="event.stopPropagation(); postExploreComment('${worldId}')">Post</button>
+        </div>
+    `;
+
+    card.addEventListener('click', () => {
+        showWorldDetail(worldId);
+    });
+
+    // Load existing comments for this card
+    const commentsRef = firebase.database().ref(`worlds/${worldId}/comments`);
+    const commentBox = card.querySelector(`#explore-comments-${worldId}`);
+    
+    commentsRef.on('child_added', (commentSnap) => {
+        const comment = commentSnap.val();
+        const div = document.createElement('div');
+        div.className = 'comment-item';
+        div.style.padding = '0.5rem';
+        div.style.marginBottom = '0.5rem';
+        div.innerHTML = `<span class="author" style="font-size: 0.8rem;">${comment.user}:</span> <span style="font-size: 0.8rem;">${comment.text}</span>`;
+        commentBox.appendChild(div);
+        commentBox.scrollTop = commentBox.scrollHeight;
+    });
+
+    return card;
+}
+
 function initExploreListener() {
     if (typeof firebase === 'undefined') return;
     
     const worldsRef = firebase.database().ref('worlds');
     const gallery = document.getElementById('gallery-grid');
-    
-    // Clear existing mock content
     gallery.innerHTML = '';
 
     worldsRef.on('child_added', (snapshot) => {
@@ -318,51 +396,11 @@ function initExploreListener() {
         const worldId = snapshot.key;
         if (!data) return;
 
-        const card = document.createElement('div');
-        card.className = 'glass-panel animate-in';
-        card.style.display = 'flex';
-        card.style.flexDirection = 'column';
-        card.style.overflow = 'hidden';
-        card.style.borderRadius = '24px';
-        card.style.cursor = 'pointer';
-        
-        card.innerHTML = `
-            <div class="world-card" style="background-image: url('${data.url}'); height: 300px; border-radius: 0;">
-                <div class="card-overlay">
-                    <h3 style="margin-bottom: 0px;">${data.prompt.substring(0, 40)}${data.prompt.length > 40 ? '...' : ''}</h3>
-                    <p style="font-size: 0.8rem; opacity: 0.7;">by ${data.user}</p>
-                </div>
-            </div>
-            <div id="explore-comments-${worldId}" class="comment-section" style="max-height: 150px; background: rgba(0,0,0,0.2);">
-                <!-- Comments will load here -->
-            </div>
-            <div class="comment-controls">
-                <input type="text" id="explore-input-${worldId}" class="comment-input" placeholder="Add a thought...">
-                <button class="send-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="event.stopPropagation(); postExploreComment('${worldId}')">Post</button>
-            </div>
-        `;
-
-        card.addEventListener('click', () => {
-            showWorldDetail(worldId);
-        });
+        const card = createGalleryCard(worldId, data);
         gallery.prepend(card);
-
-        // Sub-listener for explore comments
-        const commentsRef = firebase.database().ref(`worlds/${worldId}/comments`);
-        const commentBox = card.querySelector(`#explore-comments-${worldId}`);
-        
-        commentsRef.on('child_added', (commentSnap) => {
-            const comment = commentSnap.val();
-            const div = document.createElement('div');
-            div.className = 'comment-item';
-            div.style.padding = '0.5rem';
-            div.style.marginBottom = '0.5rem';
-            div.innerHTML = `<span class="author" style="font-size: 0.8rem;">${comment.user}:</span> <span style="font-size: 0.8rem;">${comment.text}</span>`;
-            commentBox.appendChild(div);
-            commentBox.scrollTop = commentBox.scrollHeight;
-        });
     });
 }
+
 
 // Global scope function for explore card comments
 window.postExploreComment = (worldId) => {
