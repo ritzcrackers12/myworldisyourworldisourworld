@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Builder | Manifest Your Reality</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">WORLD BUILDER</div>
+            <nav id="main-nav" style="display: none;">
+                <a href="#" id="nav-create" class="active">Create</a>
+                <a href="#" id="nav-explore">Explore other worlds</a>
+                <a href="#" id="nav-logout">Logout</a>
+            </nav>
+        </header>
+
+        <!-- Login Section -->
+        <main id="login-section" class="hero">
+            <h1 class="animate-in">Manifest Your Reality.</h1>
+            <p class="animate-in" style="color: var(--text-dim); margin-bottom: 2.5rem; max-width: 500px;">
+                Enter your email to begin crafting worlds through the power of generative intelligence.
+            </p>
+            <div class="glass-panel animate-in" style="padding: 2.5rem; width: 100%; max-width: 400px;">
+                <div class="chat-input-wrapper" style="margin-top: 0; background: rgba(255,255,255,0.05);">
+                    <input type="email" id="login-email" placeholder="email@universe.com" required>
+                </div>
+                <button id="login-btn" class="send-btn" style="width: 100%; margin-top: 1.5rem;">Enter the Void</button>
+            </div>
+        </main>
+
+        <!-- Create Section (Chatbot) -->
+        <main id="create-section" class="chat-container" style="display: none;">
+            <div id="chat-messages" style="height: 50vh; overflow-y: auto; margin-bottom: 2rem; display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Chatbot response -->
+                <div class="glass-panel" style="padding: 1.2rem 2rem; border-radius: 4px 24px 24px 24px; align-self: flex-start; max-width: 80%;">
+                    <p style="font-size: 1.1rem; line-height: 1.5;">Welcome, Traveler. <br><br><strong>Tell me, what are the details of your world?</strong></p>
+                </div>
+            </div>
+            
+            <div class="chat-input-wrapper">
+                <input type="text" id="world-details" placeholder="A synthwave city under a purple moon...">
+                <button id="generate-btn" class="send-btn">Generate</button>
+            </div>
+            <div id="generation-status" style="margin-top: 1rem; text-align: center; color: var(--secondary-accent); font-size: 0.9rem; opacity: 0;">
+                Summoning your world...
+            </div>
+        </main>
+
+        <!-- Explore Section -->
+        <main id="explore-section" style="display: none; padding-top: 100px;">
+            <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
+                <h2 style="font-size: 2.5rem; margin-bottom: 2rem;">Other Realities</h2>
+                <div id="gallery-grid" class="gallery-grid">
+                    <!-- Worlds will be injected here -->
+                    <div class="world-card glass-panel" style="background-image: url('https://picsum.photos/seed/world1/800/600');">
+                        <div class="card-overlay">
+                            <h3>Crystal Desert</h3>
+                            <p>by nexus_explorer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <script src="app.js"></script>
+</body>
+</html>
