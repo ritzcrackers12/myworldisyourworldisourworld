@@ -1,12 +1,12 @@
 // Firebase Configuration (Requires Web SDK keys from Firebase Console)
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY", // <--- Paste your Web API Key here
+    apiKey: "AIzaSyD7tfbkFh45OULU7EQQ0Fmpop5pbxQ1kgM",
     authDomain: "isthistuffingtonfr.firebaseapp.com",
     databaseURL: "https://isthistuffingtonfr-default-rtdb.firebaseio.com",
     projectId: "isthistuffingtonfr",
-    storageBucket: "isthistuffingtonfr.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    storageBucket: "isthistuffingtonfr.firebasestorage.app",
+    messagingSenderId: "793197617620",
+    appId: "1:793197617620:web:13b01b5171b9f6c7f93641"
 };
 
 // Initialize Firebase
