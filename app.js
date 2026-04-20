@@ -142,26 +142,15 @@ generateBtn.addEventListener('click', async () => {
 
         if (imageUrl) {
             console.log("Image URL received:", imageUrl);
-            addChatMessage('Bot', `Behold, the manifestation of your vision:`);
             
-            // Create image element in chat (Keeping it as a preview)
-            const imgContainer = document.createElement('div');
-            imgContainer.className = 'glass-panel animate-in';
-            imgContainer.style.marginTop = '1rem';
-            imgContainer.style.overflow = 'hidden';
-            imgContainer.innerHTML = `<img src="${imageUrl}" style="width: 100%; border-radius: 12px; display: block;" onerror="console.error('IMG LOAD FAILED', this.src); this.parentElement.innerHTML='<p style=padding:20px>Image failed to load</p>'">`;
-            chatMessages.appendChild(imgContainer);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Save to Firebase and show in Detail View
+            // Save to Firebase and show in Detail View immediately
             try {
                 const worldId = await saveWorldToFirebase(details, imageUrl);
                 state.lastWorldId = worldId;
-                
-                // Switch to "Detail" after a brief delay
-                setTimeout(() => showWorldDetail(worldId), 1500);
+                showWorldDetail(worldId);
             } catch (fbError) {
                 console.warn("Firebase save failed:", fbError);
+                addChatMessage('Bot', "Your world was manifested, but I couldn't save it to the collective memory.");
             }
         } else {
             console.error("No image URL found in output:", result);
@@ -274,7 +263,10 @@ function initExploreListener() {
             </div>
         `;
 
-        card.addEventListener('click', () => showWorldDetail(worldId));
+        card.addEventListener('click', (e) => {
+            console.log('Card clicked:', worldId);
+            showWorldDetail(worldId);
+        });
         gallery.prepend(card);
     });
 }
