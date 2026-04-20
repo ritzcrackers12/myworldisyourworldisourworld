@@ -10,9 +10,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+let db;
 if (typeof firebase !== 'undefined') {
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    db = firebase.database();
 }
 
 // State Management
@@ -66,16 +67,23 @@ document.getElementById('register-btn').addEventListener('click', async () => {
 
     if (!user || !pass) return showLoginError("Username and password required.");
     if (user.length < 3) return showLoginError("Username too short.");
-    if (!firebase || !db) return showLoginError("Connection to void lost.");
+    
+    console.log("Attempting registration:", user);
+    if (!firebase || !db) {
+        console.error("Firebase/DB not initialized");
+        return showLoginError("Connection to void lost.");
+    }
 
     const userRef = firebase.database().ref(`users/${user}`);
     const snapshot = await userRef.once('value');
 
     if (snapshot.exists()) {
+        console.warn("User already exists:", user);
         return showLoginError("That identity is already taken.");
     }
 
     await userRef.set({ password: pass, created: Date.now() });
+    console.log("Registration successful for:", user);
     
     state.user = { name: user };
     nav.style.display = 'flex';
@@ -89,19 +97,28 @@ loginBtn.addEventListener('click', async () => {
     const pass = document.getElementById('login-password').value;
 
     if (!user || !pass) return showLoginError("Enter your credentials.");
-    if (!firebase || !db) return showLoginError("Connection to void lost.");
+    
+    console.log("Attempting login:", user);
+    if (!firebase || !db) {
+        console.error("Firebase/DB not initialized");
+        return showLoginError("Connection to void lost.");
+    }
 
     const userRef = firebase.database().ref(`users/${user}`);
     const snapshot = await userRef.once('value');
 
     if (!snapshot.exists()) {
+        console.warn("User not found:", user);
         return showLoginError("Identity not found. Begin a new journey?");
     }
 
     const userData = snapshot.val();
     if (userData.password !== pass) {
+        console.warn("Invalid password for:", user);
         return showLoginError("Forbidden. Credentials do not match.");
     }
+
+    console.log("Login successful for:", user);
 
     state.user = { name: user };
     nav.style.display = 'flex';
