@@ -117,10 +117,19 @@ generateBtn.addEventListener('click', async () => {
         });
 
         const result = await response.json();
+        console.log("API Response:", result);
         status.style.opacity = '0';
 
-        if (result.output && result.output.length > 0) {
-            const imageUrl = result.output[0];
+        let imageUrl = null;
+        if (result.output) {
+            if (Array.isArray(result.output) && result.output.length > 0) {
+                imageUrl = result.output[0];
+            } else if (typeof result.output === 'string') {
+                imageUrl = result.output;
+            }
+        }
+
+        if (imageUrl) {
             addChatMessage('Bot', `Behold, the manifestation of your vision:`);
             
             // Create image element in chat
@@ -128,19 +137,20 @@ generateBtn.addEventListener('click', async () => {
             imgContainer.className = 'glass-panel animate-in';
             imgContainer.style.marginTop = '1rem';
             imgContainer.style.overflow = 'hidden';
-            imgContainer.innerHTML = `<img src="${imageUrl}" style="width: 100%; border-radius: 12px; display: block;">`;
+            imgContainer.innerHTML = `<img src="${imageUrl}" style="width: 100%; border-radius: 12px; display: block;" onerror="this.parentElement.innerHTML='<p style=padding:20px>Image failed to load</p>'">`;
             chatMessages.appendChild(imgContainer);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
             // Push to Firebase for global "Explore" tab
             saveWorldToFirebase(details, imageUrl);
         } else {
-            addChatMessage('Bot', "The portal flickered. I could not manifest that world. Try another vision?");
+            console.error("No image URL found in output:", result);
+            addChatMessage('Bot', `The portal flickered. (Error: ${result.error || 'No output found'}). Try another vision?`);
         }
     } catch (error) {
         console.error('Generation failed:', error);
         status.style.opacity = '0';
-        addChatMessage('Bot', "A temporal rift occurred during generation. Please try again.");
+        addChatMessage('Bot', "A temporal rift (Network Error) occurred. Please check your connection or API status.");
     }
 });
 
