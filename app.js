@@ -147,7 +147,9 @@ generateBtn.addEventListener('click', async () => {
             try {
                 const worldId = await saveWorldToFirebase(details, imageUrl);
                 state.lastWorldId = worldId;
-                showWorldDetail(worldId);
+                console.log("Generation successful, navigating to:", worldId);
+                // Delay slightly to ensure Firebase has propagated if possible, though showWorldDetail handles it
+                setTimeout(() => showWorldDetail(worldId), 100);
             } catch (fbError) {
                 console.warn("Firebase save failed:", fbError);
                 addChatMessage('Bot', "Your world was manifested, but I couldn't save it to the collective memory.");
@@ -261,15 +263,50 @@ function initExploreListener() {
                     <p style="font-size: 0.8rem; opacity: 0.7;">by ${data.user}</p>
                 </div>
             </div>
+            <div id="explore-comments-${worldId}" class="comment-section" style="max-height: 150px; background: rgba(0,0,0,0.2);">
+                <!-- Comments will load here -->
+            </div>
+            <div class="comment-controls">
+                <input type="text" id="explore-input-${worldId}" class="comment-input" placeholder="Add a thought...">
+                <button class="send-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="event.stopPropagation(); postExploreComment('${worldId}')">Post</button>
+            </div>
         `;
 
-        card.addEventListener('click', (e) => {
-            console.log('Card clicked:', worldId);
+        card.addEventListener('click', () => {
             showWorldDetail(worldId);
         });
         gallery.prepend(card);
+
+        // Sub-listener for explore comments
+        const commentsRef = firebase.database().ref(`worlds/${worldId}/comments`);
+        const commentBox = card.querySelector(`#explore-comments-${worldId}`);
+        
+        commentsRef.on('child_added', (commentSnap) => {
+            const comment = commentSnap.val();
+            const div = document.createElement('div');
+            div.className = 'comment-item';
+            div.style.padding = '0.5rem';
+            div.style.marginBottom = '0.5rem';
+            div.innerHTML = `<span class="author" style="font-size: 0.8rem;">${comment.user}:</span> <span style="font-size: 0.8rem;">${comment.text}</span>`;
+            commentBox.appendChild(div);
+            commentBox.scrollTop = commentBox.scrollHeight;
+        });
     });
 }
+
+// Global scope function for explore card comments
+window.postExploreComment = (worldId) => {
+    const input = document.getElementById(`explore-input-${worldId}`);
+    const text = input.value;
+    if (!text || !state.user) return;
+
+    firebase.database().ref(`worlds/${worldId}/comments`).push({
+        user: state.user.name,
+        text: text,
+        timestamp: Date.now()
+    });
+    input.value = '';
+};
 
 async function saveWorldToFirebase(prompt, url) {
     if (typeof firebase === 'undefined' || !state.user) return null;
