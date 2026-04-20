@@ -241,21 +241,21 @@ async function showWorldDetail(worldId) {
     if (!firebase || !db) return;
     
     showSection('detail');
-    const display = document.getElementById('detail-display');
     const promptEl = document.getElementById('detail-prompt');
     const authorEl = document.getElementById('detail-author');
     const commentsEl = document.getElementById('detail-comments');
     const postBtn = document.getElementById('detail-post-btn');
     const commentInput = document.getElementById('detail-comment-input');
 
-    display.innerHTML = '<div style="padding: 100px; text-align: center;">Opening portal...</div>';
+    promptEl.textContent = 'Opening portal...';
+    authorEl.textContent = '';
     
     const worldRef = firebase.database().ref(`worlds/${worldId}`);
     const snapshot = await worldRef.once('value');
     const data = snapshot.val();
 
     if (!data) {
-        display.innerHTML = '<div style="padding: 100px; text-align: center;">World not found.</div>';
+        promptEl.textContent = 'World not found.';
         return;
     }
 
