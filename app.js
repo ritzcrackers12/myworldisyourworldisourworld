@@ -328,7 +328,7 @@ async function showUserWorlds() {
         
         worldIds.forEach(id => {
             const data = worlds[id];
-            const card = createGalleryCard(id, data);
+            const card = createGalleryCard(id, data, false); // NO comments for personal cards
             grid.appendChild(card);
         });
     } catch (err) {
@@ -337,7 +337,7 @@ async function showUserWorlds() {
     }
 }
 
-function createGalleryCard(worldId, data) {
+function createGalleryCard(worldId, data, includeComments = true) {
     const card = document.createElement('div');
     card.className = 'glass-panel animate-in';
     card.style.display = 'flex';
@@ -346,40 +346,49 @@ function createGalleryCard(worldId, data) {
     card.style.borderRadius = '24px';
     card.style.cursor = 'pointer';
     
-    card.innerHTML = `
+    let innerHTML = `
         <div class="world-card" style="background-image: url('${data.url}'); height: 300px; border-radius: 0;">
             <div class="card-overlay">
                 <h3 style="margin-bottom: 0px;">${data.prompt.substring(0, 40)}${data.prompt.length > 40 ? '...' : ''}</h3>
                 <p style="font-size: 0.8rem; opacity: 0.7;">by ${data.user}</p>
             </div>
         </div>
-        <div id="explore-comments-${worldId}" class="comment-section" style="max-height: 150px; background: rgba(0,0,0,0.2);">
-            <!-- Comments will load here -->
-        </div>
-        <div class="comment-controls">
-            <input type="text" id="explore-input-${worldId}" class="comment-input" placeholder="Add a thought...">
-            <button class="send-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="event.stopPropagation(); postExploreComment('${worldId}')">Post</button>
-        </div>
     `;
+
+    if (includeComments) {
+        innerHTML += `
+            <div id="explore-comments-${worldId}" class="comment-section" style="max-height: 150px; background: rgba(0,0,0,0.2);">
+                <!-- Comments will load here -->
+            </div>
+            <div class="comment-controls">
+                <input type="text" id="explore-input-${worldId}" class="comment-input" placeholder="Add a thought...">
+                <button class="send-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="event.stopPropagation(); postExploreComment('${worldId}')">Post</button>
+            </div>
+        `;
+    }
+
+    card.innerHTML = innerHTML;
 
     card.addEventListener('click', () => {
         showWorldDetail(worldId);
     });
 
-    // Load existing comments for this card
-    const commentsRef = firebase.database().ref(`worlds/${worldId}/comments`);
-    const commentBox = card.querySelector(`#explore-comments-${worldId}`);
-    
-    commentsRef.on('child_added', (commentSnap) => {
-        const comment = commentSnap.val();
-        const div = document.createElement('div');
-        div.className = 'comment-item';
-        div.style.padding = '0.5rem';
-        div.style.marginBottom = '0.5rem';
-        div.innerHTML = `<span class="author" style="font-size: 0.8rem;">${comment.user}:</span> <span style="font-size: 0.8rem;">${comment.text}</span>`;
-        commentBox.appendChild(div);
-        commentBox.scrollTop = commentBox.scrollHeight;
-    });
+    if (includeComments) {
+        // Load existing comments for this card
+        const commentsRef = firebase.database().ref(`worlds/${worldId}/comments`);
+        const commentBox = card.querySelector(`#explore-comments-${worldId}`);
+        
+        commentsRef.on('child_added', (commentSnap) => {
+            const comment = commentSnap.val();
+            const div = document.createElement('div');
+            div.className = 'comment-item';
+            div.style.padding = '0.5rem';
+            div.style.marginBottom = '0.5rem';
+            div.innerHTML = `<span class="author" style="font-size: 0.8rem;">${comment.user}:</span> <span style="font-size: 0.8rem;">${comment.text}</span>`;
+            commentBox.appendChild(div);
+            commentBox.scrollTop = commentBox.scrollHeight;
+        });
+    }
 
     return card;
 }
