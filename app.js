@@ -11,6 +11,7 @@ if (typeof firebase !== 'undefined') {
 const state = {
     user: null,
     currentSection: 'login',
+    lastGallerySection: 'explore',
     worlds: []
 };
 
@@ -37,10 +38,13 @@ function showSection(sectionName) {
     });
     
     state.currentSection = sectionName;
-    
+    if (sectionName === 'explore' || sectionName === 'userWorlds') {
+        state.lastGallerySection = sectionName;
+    }
+
     // Update Nav Active State
     document.querySelectorAll('nav a').forEach(a => {
-        a.classList.toggle('active', a.id === `nav-${sectionName}`);
+        a.classList.toggle('active', a.id === `nav-${sectionName}` || (sectionName === 'userWorlds' && a.id === 'nav-your-world'));
     });
 }
 
@@ -216,10 +220,9 @@ generateBtn.addEventListener('click', async () => {
             // Save to Firebase and show in Detail View immediately
             try {
                 const worldId = await saveWorldToFirebase(details, imageUrl);
+                console.log("Generation successful, navigating to gallery...");
                 state.lastWorldId = worldId;
-                console.log("Generation successful, navigating to:", worldId);
-                // Delay slightly to ensure Firebase has propagated if possible, though showWorldDetail handles it
-                setTimeout(() => showWorldDetail(worldId), 100);
+                showUserWorlds(); 
             } catch (fbError) {
                 console.warn("Firebase save failed:", fbError);
                 addChatMessage('Bot', "Your world was manifested, but I couldn't save it to the collective memory.");
@@ -300,7 +303,7 @@ async function showWorldDetail(worldId) {
 
 // Detail View Event Listeners
 document.getElementById('back-to-explore').addEventListener('click', () => {
-    showSection('explore');
+    showSection(state.lastGallerySection || 'explore');
 });
 
 // 2. Real-time Subscription for "Explore"
