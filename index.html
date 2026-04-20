@@ -63,18 +63,26 @@
             </div>
         </main>
 
-        <!-- Your World Section -->
-        <main id="your-world-section" style="display: none; padding-top: 100px;">
+        <!-- Detail View Section -->
+        <main id="detail-section" style="display: none; padding-top: 100px;">
             <div class="container" style="max-width: 800px; margin: 0 auto; padding: 0 2rem;">
-                <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Your Manifestation</h2>
-                <p id="your-world-prompt" style="color: var(--text-dim); margin-bottom: 2rem; font-style: italic;"></p>
-                <div id="your-world-display" class="glass-panel" style="overflow: hidden; margin-bottom: 2rem;">
-                    <!-- Latest generated world will appear here -->
+                <button id="back-to-explore" class="creator-btn" style="margin-bottom: 2rem;">← Back to Explore</button>
+                <div id="detail-display" class="glass-panel" style="overflow: hidden; margin-bottom: 2rem; position: relative;">
+                    <!-- Full world image will appear here -->
                 </div>
-                <div class="glass-panel" style="padding: 2rem;">
-                    <h3 style="margin-bottom: 1.5rem;">Observer Thoughts</h3>
-                    <div id="your-world-comments" class="comment-section" style="max-height: none; background: transparent; border: none; padding: 0;">
-                        <!-- Comments for this world -->
+                <div id="detail-info" style="margin-bottom: 2rem;">
+                    <h2 id="detail-prompt" style="font-size: 2rem; margin-bottom: 0.5rem;"></h2>
+                    <p id="detail-author" style="color: var(--secondary-accent); font-weight: 600;"></p>
+                </div>
+                
+                <div class="glass-panel detail-comment-container" style="padding: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem;">Thoughts and Echoes</h3>
+                    <div id="detail-comments" class="comment-section" style="max-height: 400px; background: transparent; border: none; padding: 0; margin-bottom: 1.5rem;">
+                        <!-- Comments will load here -->
+                    </div>
+                    <div class="comment-controls" style="padding: 0;">
+                        <input type="text" id="detail-comment-input" class="comment-input" placeholder="Whisper into this reality...">
+                        <button id="detail-post-btn" class="send-btn" style="padding: 0.6rem 1.2rem; font-size: 0.9rem;">Post</button>
                     </div>
                 </div>
             </div>

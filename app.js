@@ -27,7 +27,7 @@ const sections = {
     login: document.getElementById('login-section'),
     create: document.getElementById('create-section'),
     explore: document.getElementById('explore-section'),
-    'your-world': document.getElementById('your-world-section')
+    detail: document.getElementById('detail-section')
 };
 
 const nav = document.getElementById('main-nav');
@@ -39,7 +39,7 @@ const chatMessages = document.getElementById('chat-messages');
 // Navigation Logic
 function showSection(sectionName) {
     Object.keys(sections).forEach(key => {
-        sections[key].style.display = key === sectionName ? (key === 'explore' || key === 'your-world' ? 'block' : 'flex') : 'none';
+        sections[key].style.display = key === sectionName ? (key === 'explore' || key === 'detail' ? 'block' : 'flex') : 'none';
     });
     
     state.currentSection = sectionName;
@@ -69,7 +69,13 @@ document.getElementById('nav-create').addEventListener('click', (e) => {
 
 document.getElementById('nav-your-world').addEventListener('click', (e) => {
     e.preventDefault();
-    showSection('your-world');
+    // Re-route 'Your World' to the most recent generation if it exists
+    if (state.lastWorldId) {
+        showWorldDetail(state.lastWorldId);
+    } else {
+        alert("You haven't manifested a world yet!");
+        showSection('create');
+    }
 });
 
 document.getElementById('nav-explore').addEventListener('click', (e) => {
@@ -147,13 +153,13 @@ generateBtn.addEventListener('click', async () => {
             chatMessages.appendChild(imgContainer);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // Save to Firebase and show in "Your World"
+            // Save to Firebase and show in Detail View
             try {
                 const worldId = await saveWorldToFirebase(details, imageUrl);
-                setupYourWorld(worldId, details, imageUrl);
+                state.lastWorldId = worldId;
                 
-                // Switch to "Your World" after a brief delay so user can see chat message
-                setTimeout(() => showSection('your-world'), 1500);
+                // Switch to "Detail" after a brief delay
+                setTimeout(() => showWorldDetail(worldId), 1500);
             } catch (fbError) {
                 console.warn("Firebase save failed:", fbError);
             }
@@ -168,27 +174,73 @@ generateBtn.addEventListener('click', async () => {
     }
 });
 
-function setupYourWorld(worldId, prompt, url) {
-    const display = document.getElementById('your-world-display');
-    const promptEl = document.getElementById('your-world-prompt');
-    const commentsEl = document.getElementById('your-world-comments');
+let currentDetailListener = null;
+
+async function showWorldDetail(worldId) {
+    if (!firebase || !db) return;
     
-    promptEl.textContent = `"${prompt}"`;
-    display.innerHTML = `<img src="${url}" style="width: 100%; height: auto; display: block;">`;
+    showSection('detail');
+    const display = document.getElementById('detail-display');
+    const promptEl = document.getElementById('detail-prompt');
+    const authorEl = document.getElementById('detail-author');
+    const commentsEl = document.getElementById('detail-comments');
+    const postBtn = document.getElementById('detail-post-btn');
+    const commentInput = document.getElementById('detail-comment-input');
+
+    display.innerHTML = '<div style="padding: 100px; text-align: center;">Opening portal...</div>';
     
-    // Clear and listen for comments
+    const worldRef = firebase.database().ref(`worlds/${worldId}`);
+    const snapshot = await worldRef.once('value');
+    const data = snapshot.val();
+
+    if (!data) {
+        display.innerHTML = '<div style="padding: 100px; text-align: center;">World not found.</div>';
+        return;
+    }
+
+    promptEl.textContent = `"${data.prompt}"`;
+    authorEl.textContent = `by ${data.user}`;
+    display.innerHTML = `<img src="${data.url}" style="width: 100%; height: auto; display: block;">`;
+    
+    // Clear previous comments and listeners
     commentsEl.innerHTML = '';
-    const commentsRef = firebase.database().ref(`worlds/${worldId}/comments`);
-    commentsRef.on('child_added', (snapshot) => {
+    if (currentDetailListener) {
+        firebase.database().ref(`worlds/${worldId}/comments`).off();
+    }
+
+    // Load and listen for comments
+    currentDetailListener = firebase.database().ref(`worlds/${worldId}/comments`);
+    currentDetailListener.on('child_added', (snapshot) => {
         const comment = snapshot.val();
         const div = document.createElement('div');
         div.className = 'comment-item';
-        div.style.padding = '1rem';
+        div.style.padding = '1.2rem';
         div.style.marginBottom = '1rem';
-        div.innerHTML = `<span class="author" style="font-size: 1rem;">${comment.user}:</span> <span style="font-size: 1.1rem;">${comment.text}</span>`;
-        commentsEl.prepend(div);
+        div.style.background = 'rgba(255,255,255,0.05)';
+        div.style.borderRadius = '16px';
+        div.innerHTML = `<span class="author" style="font-size: 1rem; color: var(--secondary-accent); font-weight: 800;">${comment.user}:</span> <span style="font-size: 1.1rem; color: var(--text-main);">${comment.text}</span>`;
+        commentsEl.appendChild(div);
+        commentsEl.scrollTop = commentsEl.scrollHeight;
     });
+
+    // Update Post button click handler
+    postBtn.onclick = () => {
+        const text = commentInput.value;
+        if (!text || !state.user) return;
+        
+        firebase.database().ref(`worlds/${worldId}/comments`).push({
+            user: state.user.name,
+            text: text,
+            timestamp: Date.now()
+        });
+        commentInput.value = '';
+    };
 }
+
+// Detail View Event Listeners
+document.getElementById('back-to-explore').addEventListener('click', () => {
+    showSection('explore');
+});
 
 // 2. Real-time Subscription for "Explore"
 function initExploreListener() {
@@ -211,49 +263,21 @@ function initExploreListener() {
         card.style.flexDirection = 'column';
         card.style.overflow = 'hidden';
         card.style.borderRadius = '24px';
+        card.style.cursor = 'pointer';
         
-        const isOwner = state.user && state.user.name === data.user;
-
         card.innerHTML = `
-            <div class="world-card" style="background-image: url('${data.url}'); flex: 1; border-radius: 0;">
+            <div class="world-card" style="background-image: url('${data.url}'); height: 300px; border-radius: 0;">
                 <div class="card-overlay">
-                    <h3>${data.prompt.substring(0, 20)}${data.prompt.length > 20 ? '...' : ''}</h3>
-                    <p>by ${data.user}</p>
-                    ${isOwner ? `<button class="creator-btn" onclick="toggleComments('${worldId}')" style="margin-top: 10px;">Hide/Show Comments</button>` : ''}
+                    <h3 style="margin-bottom: 0px;">${data.prompt.substring(0, 40)}${data.prompt.length > 40 ? '...' : ''}</h3>
+                    <p style="font-size: 0.8rem; opacity: 0.7;">by ${data.user}</p>
                 </div>
             </div>
-            <div id="comments-${worldId}" class="comment-section ${data.commentsHidden ? 'hidden-comments' : ''}">
-                <!-- Comments will load here -->
-            </div>
-            <div class="comment-controls">
-                <input type="text" id="input-${worldId}" class="comment-input" placeholder="Add a thought...">
-                <button class="creator-btn" onclick="postComment('${worldId}')">Post</button>
-            </div>
         `;
+
+        card.addEventListener('click', () => showWorldDetail(worldId));
         gallery.prepend(card);
-
-        // Sub-listener for comments
-        const commentsRef = firebase.database().ref(`worlds/${worldId}/comments`);
-        const commentBox = card.querySelector(`#comments-${worldId}`);
-        
-        commentsRef.on('child_added', (commentSnap) => {
-            const comment = commentSnap.val();
-            const div = document.createElement('div');
-            div.className = 'comment-item';
-            div.innerHTML = `<span class="author">${comment.user}:</span> ${comment.text}`;
-            commentBox.appendChild(div);
-            commentBox.scrollTop = commentBox.scrollHeight;
-        });
-
-        // Sub-listener for visibility toggle
-        firebase.database().ref(`worlds/${worldId}/commentsHidden`).on('value', (hideSnap) => {
-            if (hideSnap.val()) {
-                commentBox.classList.add('hidden-comments');
-            } else {
-                commentBox.classList.remove('hidden-comments');
-            }
-        });
     });
+}
 }
 
 // Global scope functions for onclick handlers
