@@ -52,12 +52,12 @@ function showSection(sectionName) {
 
 // Mock Login
 loginBtn.addEventListener('click', () => {
-    const email = document.getElementById('login-email').value;
-    if (email) {
-        state.user = { email };
+    const name = document.getElementById('login-name').value;
+    if (name) {
+        state.user = { name };
         nav.style.display = 'flex';
         showSection('create');
-        addChatMessage('System', `Identity verified: ${email}. Portals active.`);
+        addChatMessage('System', `Identity verified: ${name}. Portals active.`);
     }
 });
 
@@ -182,7 +182,7 @@ function initExploreListener() {
         card.style.overflow = 'hidden';
         card.style.borderRadius = '24px';
         
-        const isOwner = state.user && state.user.email === data.user;
+        const isOwner = state.user && state.user.name === data.user;
 
         card.innerHTML = `
             <div class="world-card" style="background-image: url('${data.url}'); flex: 1; border-radius: 0;">
@@ -210,7 +210,7 @@ function initExploreListener() {
             const comment = commentSnap.val();
             const div = document.createElement('div');
             div.className = 'comment-item';
-            div.innerHTML = `<span class="author">${comment.user.split('@')[0]}:</span> ${comment.text}`;
+            div.innerHTML = `<span class="author">${comment.user}:</span> ${comment.text}`;
             commentBox.appendChild(div);
             commentBox.scrollTop = commentBox.scrollHeight;
         });
@@ -233,7 +233,7 @@ window.postComment = (worldId) => {
     if (!text || !state.user) return;
 
     firebase.database().ref(`worlds/${worldId}/comments`).push({
-        user: state.user.email,
+        user: state.user.name,
         text: text,
         timestamp: Date.now()
     });
@@ -254,7 +254,7 @@ async function saveWorldToFirebase(prompt, url) {
     await worldsRef.push({
         prompt: prompt,
         url: url,
-        user: state.user.email,
+        user: state.user.name,
         timestamp: Date.now()
     });
 }
