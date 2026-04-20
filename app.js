@@ -1,13 +1,4 @@
-// Firebase Configuration (Requires Web SDK keys from Firebase Console)
-const firebaseConfig = {
-    apiKey: "AIzaSyD7tfbkFh45OULU7EQQ0Fmpop5pbxQ1kgM",
-    authDomain: "isthistuffingtonfr.firebaseapp.com",
-    databaseURL: "https://isthistuffingtonfr-default-rtdb.firebaseio.com",
-    projectId: "isthistuffingtonfr",
-    storageBucket: "isthistuffingtonfr.firebasestorage.app",
-    messagingSenderId: "793197617620",
-    appId: "1:793197617620:web:13b01b5171b9f6c7f93641"
-};
+// Firebase initialization (Config loaded from config.js)
 
 // Initialize Firebase
 let db;
@@ -125,11 +116,18 @@ loginBtn.addEventListener('click', async () => {
     showSection('create');
     addChatMessage('System', `Welcome back, ${user}. Re-establishing portal connection.`);
     
-    // Find last world by this user
+    // Find last world by this user with improved error handling
     firebase.database().ref('worlds').orderByChild('user').equalTo(user).limitToLast(1).once('value', (snap) => {
         if (snap.exists()) {
-            state.lastWorldId = Object.keys(snap.val())[0];
+            const data = snap.val();
+            state.lastWorldId = Object.keys(data)[0];
+            console.log("Found your most recent manifest:", state.lastWorldId);
+        } else {
+            console.log("No previous manifests found for this identity.");
+            state.lastWorldId = null;
         }
+    }, (error) => {
+        console.error("Firebase query failed (check your Rules for .indexOn):", error);
     });
 });
 
