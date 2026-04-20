@@ -15,7 +15,8 @@
             <div class="logo">WORLD BUILDER</div>
             <nav id="main-nav" style="display: none;">
                 <a href="#" id="nav-create" class="active">Create</a>
-                <a href="#" id="nav-explore">Explore other worlds</a>
+                <a href="#" id="nav-your-world">Your World</a>
+                <a href="#" id="nav-explore">Explore</a>
                 <a href="#" id="nav-logout">Logout</a>
             </nav>
         </header>
@@ -58,11 +59,22 @@
                 <h2 style="font-size: 2.5rem; margin-bottom: 2rem;">Other Realities</h2>
                 <div id="gallery-grid" class="gallery-grid">
                     <!-- Worlds will be injected here -->
-                    <div class="world-card glass-panel" style="background-image: url('https://picsum.photos/seed/world1/800/600');">
-                        <div class="card-overlay">
-                            <h3>Crystal Desert</h3>
-                            <p>by nexus_explorer</p>
-                        </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Your World Section -->
+        <main id="your-world-section" style="display: none; padding-top: 100px;">
+            <div class="container" style="max-width: 800px; margin: 0 auto; padding: 0 2rem;">
+                <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Your Manifestation</h2>
+                <p id="your-world-prompt" style="color: var(--text-dim); margin-bottom: 2rem; font-style: italic;"></p>
+                <div id="your-world-display" class="glass-panel" style="overflow: hidden; margin-bottom: 2rem;">
+                    <!-- Latest generated world will appear here -->
+                </div>
+                <div class="glass-panel" style="padding: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem;">Observer Thoughts</h3>
+                    <div id="your-world-comments" class="comment-section" style="max-height: none; background: transparent; border: none; padding: 0;">
+                        <!-- Comments for this world -->
                     </div>
                 </div>
             </div>

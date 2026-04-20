@@ -26,7 +26,8 @@ const state = {
 const sections = {
     login: document.getElementById('login-section'),
     create: document.getElementById('create-section'),
-    explore: document.getElementById('explore-section')
+    explore: document.getElementById('explore-section'),
+    'your-world': document.getElementById('your-world-section')
 };
 
 const nav = document.getElementById('main-nav');
@@ -38,8 +39,7 @@ const chatMessages = document.getElementById('chat-messages');
 // Navigation Logic
 function showSection(sectionName) {
     Object.keys(sections).forEach(key => {
-        sections[key].style.display = key === sectionName ? (key === 'explore' ? 'block' : 'flex') : 'none';
-        if (key === 'create' && sectionName === 'create') sections[key].style.display = 'block';
+        sections[key].style.display = key === sectionName ? (key === 'explore' || key === 'your-world' ? 'block' : 'flex') : 'none';
     });
     
     state.currentSection = sectionName;
@@ -65,6 +65,11 @@ loginBtn.addEventListener('click', () => {
 document.getElementById('nav-create').addEventListener('click', (e) => {
     e.preventDefault();
     showSection('create');
+});
+
+document.getElementById('nav-your-world').addEventListener('click', (e) => {
+    e.preventDefault();
+    showSection('your-world');
 });
 
 document.getElementById('nav-explore').addEventListener('click', (e) => {
@@ -133,7 +138,7 @@ generateBtn.addEventListener('click', async () => {
             console.log("Image URL received:", imageUrl);
             addChatMessage('Bot', `Behold, the manifestation of your vision:`);
             
-            // Create image element in chat
+            // Create image element in chat (Keeping it as a preview)
             const imgContainer = document.createElement('div');
             imgContainer.className = 'glass-panel animate-in';
             imgContainer.style.marginTop = '1rem';
@@ -142,12 +147,15 @@ generateBtn.addEventListener('click', async () => {
             chatMessages.appendChild(imgContainer);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // Attempt to save to Firebase, but don't let it crash the UI if permissions fail
+            // Save to Firebase and show in "Your World"
             try {
-                await saveWorldToFirebase(details, imageUrl);
-                console.log("Firebase save successful");
+                const worldId = await saveWorldToFirebase(details, imageUrl);
+                setupYourWorld(worldId, details, imageUrl);
+                
+                // Switch to "Your World" after a brief delay so user can see chat message
+                setTimeout(() => showSection('your-world'), 1500);
             } catch (fbError) {
-                console.warn("Firebase save failed (probably permissions):", fbError);
+                console.warn("Firebase save failed:", fbError);
             }
         } else {
             console.error("No image URL found in output:", result);
@@ -159,6 +167,28 @@ generateBtn.addEventListener('click', async () => {
         addChatMessage('Bot', "A temporal rift occurred. Check the browser console (F12) for details.");
     }
 });
+
+function setupYourWorld(worldId, prompt, url) {
+    const display = document.getElementById('your-world-display');
+    const promptEl = document.getElementById('your-world-prompt');
+    const commentsEl = document.getElementById('your-world-comments');
+    
+    promptEl.textContent = `"${prompt}"`;
+    display.innerHTML = `<img src="${url}" style="width: 100%; height: auto; display: block;">`;
+    
+    // Clear and listen for comments
+    commentsEl.innerHTML = '';
+    const commentsRef = firebase.database().ref(`worlds/${worldId}/comments`);
+    commentsRef.on('child_added', (snapshot) => {
+        const comment = snapshot.val();
+        const div = document.createElement('div');
+        div.className = 'comment-item';
+        div.style.padding = '1rem';
+        div.style.marginBottom = '1rem';
+        div.innerHTML = `<span class="author" style="font-size: 1rem;">${comment.user}:</span> <span style="font-size: 1.1rem;">${comment.text}</span>`;
+        commentsEl.prepend(div);
+    });
+}
 
 // 2. Real-time Subscription for "Explore"
 function initExploreListener() {
@@ -248,15 +278,17 @@ window.toggleComments = (worldId) => {
 };
 
 async function saveWorldToFirebase(prompt, url) {
-    if (typeof firebase === 'undefined' || !state.user) return;
+    if (typeof firebase === 'undefined' || !state.user) return null;
     
     const worldsRef = firebase.database().ref('worlds');
-    await worldsRef.push({
+    const newWorldRef = worldsRef.push();
+    await newWorldRef.set({
         prompt: prompt,
         url: url,
         user: state.user.name,
         timestamp: Date.now()
     });
+    return newWorldRef.key;
 }
 
 // Update the generate handler to use Firebase
