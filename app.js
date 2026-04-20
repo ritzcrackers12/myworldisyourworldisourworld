@@ -200,7 +200,7 @@ async function showWorldDetail(worldId) {
 
     promptEl.textContent = `"${data.prompt}"`;
     authorEl.textContent = `by ${data.user}`;
-    display.innerHTML = `<img src="${data.url}" style="width: 100%; height: auto; display: block;">`;
+    document.getElementById('detail-img-full').src = data.url;
     
     // Clear previous comments and listeners
     commentsEl.innerHTML = '';
@@ -278,28 +278,6 @@ function initExploreListener() {
         gallery.prepend(card);
     });
 }
-}
-
-// Global scope functions for onclick handlers
-window.postComment = (worldId) => {
-    const input = document.getElementById(`input-${worldId}`);
-    const text = input.value;
-    if (!text || !state.user) return;
-
-    firebase.database().ref(`worlds/${worldId}/comments`).push({
-        user: state.user.name,
-        text: text,
-        timestamp: Date.now()
-    });
-    input.value = '';
-};
-
-window.toggleComments = (worldId) => {
-    const ref = firebase.database().ref(`worlds/${worldId}/commentsHidden`);
-    ref.once('value').then(snap => {
-        ref.set(!snap.val());
-    });
-};
 
 async function saveWorldToFirebase(prompt, url) {
     if (typeof firebase === 'undefined' || !state.user) return null;

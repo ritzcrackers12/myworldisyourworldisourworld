@@ -243,32 +243,40 @@ nav a:hover, nav a.active {
 }
 
 /* Detail View UI */
-#detail-section .container {
-    animation: slideUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+#detail-section {
+    animation: fadeIn 0.8s ease-out forwards;
 }
 
-#detail-display {
-    box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 20px rgba(108, 92, 231, 0.2);
-    transition: var(--transition);
+.comment-tab {
+    background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(3, 4, 22, 1) 100%);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-top: 1px solid var(--glass-border);
+    transition: transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-#detail-display img {
-    transition: transform 0.8s ease;
+.comment-tab:hover {
+    box-shadow: 0 -20px 60px rgba(0,0,0,0.7);
 }
 
-#detail-display:hover img {
-    transform: scale(1.02);
+#detail-meta {
+    animation: slideInRight 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
 }
 
-.detail-comment-container {
-    background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+#detail-prompt {
+    font-weight: 900;
+    letter-spacing: -1px;
 }
 
 /* Animations */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes slideUp {
@@ -285,4 +293,6 @@ nav a:hover, nav a.active {
     .hero h1 { font-size: 2.5rem; }
     .nav { gap: 1rem; }
     header { padding: 1rem; }
+    #detail-meta { top: auto; bottom: 40vh; right: 2rem; left: 2rem; text-align: left; }
+    #detail-prompt { font-size: 1.8rem; }
 }
