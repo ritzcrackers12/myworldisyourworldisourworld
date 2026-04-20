@@ -111,7 +111,7 @@ generateBtn.addEventListener('click', async () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: 'black-forest-labs/flux-2-pro',
+                model: 'black-forest-labs/flux-schnell',
                 input: { prompt: details }
             })
         });
@@ -130,6 +130,7 @@ generateBtn.addEventListener('click', async () => {
         }
 
         if (imageUrl) {
+            console.log("Image URL received:", imageUrl);
             addChatMessage('Bot', `Behold, the manifestation of your vision:`);
             
             // Create image element in chat
@@ -137,20 +138,25 @@ generateBtn.addEventListener('click', async () => {
             imgContainer.className = 'glass-panel animate-in';
             imgContainer.style.marginTop = '1rem';
             imgContainer.style.overflow = 'hidden';
-            imgContainer.innerHTML = `<img src="${imageUrl}" style="width: 100%; border-radius: 12px; display: block;" onerror="this.parentElement.innerHTML='<p style=padding:20px>Image failed to load</p>'">`;
+            imgContainer.innerHTML = `<img src="${imageUrl}" style="width: 100%; border-radius: 12px; display: block;" onerror="console.error('IMG LOAD FAILED', this.src); this.parentElement.innerHTML='<p style=padding:20px>Image failed to load</p>'">`;
             chatMessages.appendChild(imgContainer);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // Push to Firebase for global "Explore" tab
-            saveWorldToFirebase(details, imageUrl);
+            // Attempt to save to Firebase, but don't let it crash the UI if permissions fail
+            try {
+                await saveWorldToFirebase(details, imageUrl);
+                console.log("Firebase save successful");
+            } catch (fbError) {
+                console.warn("Firebase save failed (probably permissions):", fbError);
+            }
         } else {
             console.error("No image URL found in output:", result);
             addChatMessage('Bot', `The portal flickered. (Error: ${result.error || 'No output found'}). Try another vision?`);
         }
     } catch (error) {
-        console.error('Generation failed:', error);
+        console.error('Generation process crashed:', error);
         status.style.opacity = '0';
-        addChatMessage('Bot', "A temporal rift (Network Error) occurred. Please check your connection or API status.");
+        addChatMessage('Bot', "A temporal rift occurred. Check the browser console (F12) for details.");
     }
 });
 
